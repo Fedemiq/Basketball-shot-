@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="utf-8">
+    <title>BASKET SHOT</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden; 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #000;
+            touch-action: none; 
+        }
+
+        #instructions {
+            position: absolute;
+            left: 20px;
+            color: #fff;
+            background: rgba(20, 20, 20, 0.85); 
+            backdrop-filter: blur(5px);
+            padding: 20px;
+            border-radius: 12px;
+            border: 2px solid #ff9900;
+            pointer-events: none;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+            font-size: 16px;
+            z-index: 10;
+        }
+
+        #instructions h1 {
+            margin-top: 0;
+            font-size: 24px;
+            color: #ff9900;
+            text-shadow: 1px 1px 2px #000;
+        }
+
+        #instructions p {
+            margin: 10px 0;
+            line-height: 1.4;
+        }
+
+        /* Customizzazione estetica lil-gui */
+        .lil-gui {
+            --background-color: rgba(20, 20, 20, 0.85);
+            --text-color: #eee;
+            --title-background-color: #ff9900;
+            --title-text-color: #000;
+            --widget-color: #444;
+            --hover-color: #666;
+            --focus-color: #ff9900;
+            --font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+            top: 20px !important;
+            right: 20px !important;
+            position: absolute;
+        }
+        
+        .lil-gui .title {
+            font-weight: bold;
+            border-radius: 12px 12px 0 0;
+            font-size: 15px;
+        }
+
+        #result-ui {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #fff;
+            font-size: 48px;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px #000;
+            display: none;
+            pointer-events: none;
+            text-align: center;
+            z-index: 5;
+        }
+
+        /* Pulsante Reset ottimizzato */
+        #reset-btn {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            padding: 15px 30px;
+            background-color: #ff9900;
+            color: #000;
+            font-size: 18px;
+            font-weight: bold;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.5);
+            display: none; 
+            z-index: 10;
+            transition: transform 0.1s;
+        }
+
+        #reset-btn:active {
+            background-color: #e68a00;
+            transform: scale(0.95);
+        }
+
+        /* Adattamenti per schermi piccoli (Mobile) */
+        @media (max-width: 768px) {
+            #instructions {
+                top: 10px;
+                left: 10px;
+                right: auto;
+                padding: 25px;
+                font-size: 30px; 
+            }
+            
+            #instructions h1 {
+                font-size: 40px;
+            }
+
+            .lil-gui {
+                --font-size: 30px; 
+                --input-font-size: 30px;
+                --name-width: 55%;
+                --slider-input-min-width: 70px;
+                --row-height: 70px; 
+                top: 10px !important;
+                right: 10px !important;
+                left: auto !important;
+                bottom: auto !important;
+                width: 450px !important;
+            }
+
+            .lil-gui .title {
+                font-size: 30px;
+                padding: 20px;
+            }
+
+            #reset-btn {
+                bottom: 20px;
+                left: 50%;
+                right: auto;
+                transform: translateX(-50%);
+                width: 90%;
+                padding: 20px; 
+                font-size: 40px; 
+                text-align: center;
+            }
+            #reset-btn:active {
+                transform: translateX(-50%) scale(0.95);
+            }
+        }
+    </style>
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/",
+                "lil-gui": "https://unpkg.com/lil-gui@0.19.1/dist/lil-gui.esm.min.js"
+            }
+        }
+    </script>
+    <script type="module" src="./PROJECT.js"></script>
+</head>
+<body>
+    <div id="instructions">
+        <h1> BASKET SHOT </h1>
+        <p>- <b>Click / Touch</b> sul giocatore o <b>Spazio</b> per tirare.</p>
+        <p>- <b>Tasto R</b> per ripristinare il tiro.</p>
+        <p>- Usa il mouse o le dita per ruotare/zoomare.</p>
+    </div>
+
+    <div id="result-ui">
+        <span id="result-text">CANESTRO!</span>
+    </div>
+
+    <button id="reset-btn">RESET TIRO (R)</button>
+</body>
+</html>

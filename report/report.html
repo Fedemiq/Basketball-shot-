@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="it">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="author" content="Federico Micello" />
+    <title>Relazione di Computer Graphics Modulo 2 - Basket Shot</title>
+
+    <style>
+        body {
+            font-family: "Times New Roman", Times, serif;
+            font-size: 12pt;
+            line-height: 1.75;
+            color: #111;
+            background: #fff;
+            max-width: 700px;
+            margin: 0 auto;
+            padding: 3rem 2rem 5rem;
+        }
+        header {
+            border-bottom: 1px solid #aaa;
+            padding-bottom: 2rem;
+            margin-bottom: 2rem;
+        }
+        header h1 {
+            font-size: 22pt;
+            margin: 0 0 0.3rem;
+        }
+        header p.subtitle {
+            font-size: 12pt;
+            margin: 0 0 1.5rem;
+        }
+
+        nav {
+            margin-bottom: 2rem;
+            padding-bottom: 2rem;
+            border-bottom: 1px solid #aaa;
+        }
+
+        a {
+            color: #111;
+            text-decoration: none;
+        }
+        a.hover { text-decoration: underline; }
+
+        section {
+            margin-bottom: 2.5rem;
+            padding-bottom: 2rem;
+            border-bottom: 1px solid #ddd;
+        }
+        section:last-of-type { border-bottom: none; }
+        h2 {
+            font-size: 14pt;
+            margin: 0 0 1rem;
+        }
+        h3 {
+            font-size: 12pt;
+            font-style: italic;
+            margin: 1.75rem 0 0.5rem;
+            font-weight: bold;
+        }
+
+        p { 
+            margin: 0 0 0.85rem; 
+            text-align: justify;
+        }
+        p:last-child { margin-bottom: 0; }
+
+        code {
+            font-family: "Courier New", monospace;
+            font-size: 10pt;
+            background: #f4f4f4;
+            color: #1c612d;
+            padding: 0.1rem 0.3rem;
+        }
+
+        pre {
+            font-family: "Courier New", monospace;
+            font-size: 9.5pt;
+            background: #f4f4f4;
+            padding: 0.75rem 1rem;
+            margin: 1rem 0;
+            overflow-x: auto;
+            line-height: 1.5;
+        }
+    </style>
+
+</head>
+
+<body>
+
+    <header id="top">
+        <h1>Report Computer Graphics Modulo 2</h1>
+        <p class="subtitle">Basket Shot: Scena 3D interattiva sviluppata in Three.js</p>
+
+            <div><span>Autore:</span> Federico Micello</div>
+            <div><span>Matricola:</span> 0001189583</div>
+            <div><span>Docente:</span> Prof. Serena Morigi</div>
+    </header>
+
+    <nav id="indice">
+        <h2>Indice</h2>
+        <ol>
+            <li><a href="#introduzione">Introduzione</a></li>
+            <li><a href="#asset">Caricamento Modelli e Asset</a></li>
+            <li><a href="#logica">Logica di Gioco e Traiettorie</a></li>
+            <li><a href="#interazione">Interazione Utente e Controlli</a></li>
+            <li><a href="#illuminazione">Illuminazione Dinamica e Ciclo Giorno/Notte</a></li>
+            <li><a href="#riferimenti">Riferimenti</a></li>
+        </ol>
+    </nav>
+
+    <section id="introduzione">
+        <h2>1. Introduzione</h2>
+
+        <p>
+            L'applicazione interattiva "Basket Shot", sviluppata in WebGL tramite la libreria Three.js, consiste in una simulazione tridimensionale di un tiro a canestro in un campetto urbano.
+            
+            <img src="images/campo-generale.png" alt="Screenshot generale della scena" style="max-width: 100%; margin-top: 0.5rem;" />
+        </p>
+
+        <p>
+            L'utente è immerso in un ambiente statico con però la simulazione dello scorrere del tempo tramite ciclo giorno-notte, che si completa nell'arco di pochi minuti reali. 
+            La scena è arricchita da feedback audio contestuali per i diversi scenari di tiro, animazione scheletrica per il personaggio principale e un calcolo matematico della traiettoria parabolica della palla. 
+            È possibile modificare la velocità di animazione del tiro tramite un'apposita interfaccia utente (GUI) e controllare la posizione della telecamera sia da desktop che da dispositivi mobile.
+        </p>
+    </section>
+
+    <section id="asset">
+        <h2>2. Caricamento Modelli e Asset</h2>
+        <p>
+            La scena si compone di vari asset 3D caricati in modo asincrono sfruttando diversi <em>Loader</em> offerti da Three.js:
+        </p>
+            <ul>
+                <li><strong>Giocatore e Campo:</strong> Caricati tramite <code>GLTFLoader</code>. Il giocatore include un'animazione scheletrica del tiro gestita tramite <code>AnimationMixer</code>.</li>
+                <li><strong>Palla da Basket:</strong> Caricata combinando <code>OBJLoader</code> e <code>MTLLoader</code> per leggere correttamente i materiali e le texture mappate.</li>
+                <li><strong>Foto autore:</strong> Generata istanziando una <code>PlaneGeometry</code> a cui viene applicata una texture fotografica 2D caricata tramite <code>TextureLoader</code></li>
+                <li><strong>Effetti Sonori:</strong> File <code>.mp3</code> caricati tramite <code>AudioLoader</code> e collegati a un <code>AudioListener</code> posizionato sulla telecamera, 
+                    garantendo un feedback uditivo differente in base all'esito del tiro (canestro, ferro o fuori). I file audio sono stati pensati per aggiungere un tocco di ilarità al progetto.</li>
+            </ul>
+    </section>
+
+    <section id="logica">
+        <h2>3. Logica di Gioco e Traiettorie</h2>
+        
+        <h3>Macchina a Stati</h3>
+        <p>
+            L'intero flusso logico dell'applicazione è controllato da una macchina a stati finiti (<code>STATE_IDLE</code>, <code>STATE_ANIMATING</code>, <code>STATE_FLYING</code>, <code>STATE_BOUNCING</code>, <code>STATE_FINISHED</code>). 
+            Questa architettura garantisce che il volo della palla inizi esattamente in sincrono con l'animazione da parte del modello 3D, gestita tramite <code>setTimeout</code>.
+        </p>
+
+        <h3>Calcolo della Parabola</h3>
+        <p>
+            Il movimento della palla nello spazio non utilizza un motore fisico reale, ma sfrutta l'interpolazione vettoriale unita a funzioni trigonometriche per simulare in modo economico ed efficace una traiettoria parabolica. 
+            La palla trasla dal punto di partenza (posizione della mano del giocatore al lancio) al punto di destinazione, che varia tra 
+            posizione del canestro in caso di tiro positivo, 
+            posizione del canestro con rimbalzo successivo in caso di tiro neutro 
+            e 3 possibili punti della scena in caso di fallimento.
+            Il calcolo dello spostamento tra punto di partenza e di arrivo è dato da <code>lerpVectors()</code>, che posta la palla lungo una linea retta diagonale verso il bersaglio.
+        </p>
+
+<pre>
+// Calcolo parabola principale
+ballMesh.position.lerpVectors(startPos, targetPos, flightProgress); 
+const arcHeight = 4.0; 
+ballMesh.position.y += Math.sin(flightProgress * Math.PI) * arcHeight; 
+
+ballMesh.rotation.x += 10 * delta; 
+ballMesh.rotation.z += 5 * delta; 
+</pre>
+    
+        <p>
+            L'aggiunta dell'onda <code>Math.sin()</code> calcolata sul progresso del volo garantisce l'innalzamento e la successiva caduta della sfera simulando la parabola di tiro. 
+            A questo si aggiunge la simulazione della rotazione della palla su sé stessa durante il volo lungo gli assi X e Z. 
+            È stato implementato anche un rimbalzo aggiuntivo nel caso in cui la palla colpisca il ferro (<code>STATE_BOUNCING</code>) prima di cadere a terra, per differenziare lo scenario positivo da quello neutro.
+            Dopo la traiettoria di volo, avendo completato la sua funzione all'iterno della scena, la palla ritorna invisibile <code>ballMesh.visible = false</code>, 
+            evitando il calcolo della successiva traiettoria di rotolamento che avrebbe solo appesantito la fluidità di gioco. 
+
+            <img src="images/campo-tiro-eseguito.png" alt="Screenshot della scena dopo aver eseguito un tiro con esito neutro" style="max-width: 100%; margin-top: 0.5rem;" />
+            <img src="images/tiro-canestro.png" alt="Screenshot della scena dopo aver eseguito un tiro con esito positivo" style="max-width: 100%; margin-top: 0.5rem;" />
+            <img src="images/tiro-fuori.png" alt="Screenshot della scena dopo aver eseguito un tiro con esito negativo" style="max-width: 100%; margin-top: 0.5rem;" />
+        </p>
+
+    </section>
+
+    <section id="interazione">
+        <h2>4. Interazione Utente e Controlli</h2>
+
+        <p>
+            Il progetto è completamente ottimizzato e responsivo, supportando molteplici schemi di interazione:
+        </p>
+        <ul>
+            <li><strong>Tiro:</strong> Attivabile cliccando il modello del giocatore tramite l'utilizzo di un <code>Raycaster</code>, che converte le coordinate 2D del mouse/touch nella scena in vettori 3D,
+                 oppure premendo la barra spaziatrice.</li>
+            <li><strong>Reset:</strong> Per ripetere il tiro, l'utente può premere il tasto "R" o utilizzare un pulsante UI in overlay, progettato con touch-target per l'utilizzo da smartphone.</li>
+            <li><strong>GUI (lil-gui):</strong> Permette di variare dinamicamente la velocità globale della palla, modificando il delta di avanzamento di <code>flightProgress</code></li>
+        </ul>
+
+        <p>
+            L'esplorazione dell'ambiente avviene tramite <code>OrbitControls</code>, configurato con limitazioni precise (<code>maxPolarAngle = Math.PI / 2</code>) per impedire rotazioni paradossali sotto il pavimento e gestire limiti di zoom (<code>minDistance</code>, <code>maxDistance</code>). È stato inoltre disabilitato esplicitamente il comportamento di default dei tocchi sulla finestra (<code>touch-action: none</code>) per evitare interferenze su dispositivi mobile.
+        </p>
+        
+    </section>
+
+    <section id="illuminazione">
+        <h2>5. Illuminazione Dinamica e Ciclo Giorno/Notte</h2>
+
+        <p>
+            Uno degli elementi tecnicamente più complessi del progetto è la transizione fluida e continua dell'illuminazione per simulare il passaggio del tempo. Lo scorrere di un intero giorno viene simulato in 120 secondi reali.
+        </p>
+
+        <p>La scena è illuminata da:</p>
+        <ol>
+            <li><strong>Luce Direzionale (Sole/Luna):</strong> <code>DirectionalLight</code> che ruota lungo un'orbita calcolata trigonometricamente sopra il campo.</li>
+            <li><strong>Luce Emisferica:</strong> <code>HemisphereLight</code> che simula la rifrazione del colore del cielo sugli oggetti, ammorbidendo le ombre.</li>
+            <li><strong>Lampioni (PointLights):</strong> 4 luci posizionate proceduralmente agli angoli del campo, per simulare l'accensione dei lampioni di notte.</li>
+        </ol>   
+
+        <p> 
+            La funzione <code>updateDayNightCycle()</code> viene richiamata ad ogni frame nel render loop. A seconda dell'ora corrente, i colori del background (il cielo) e della luce direzionale vengono fusi tramite interpolazione cromatica (<code>lerpColors</code>) per ricreare le tonalità dell'alba, del pieno giorno, del tramonto e della notte.
+            Per ottenere i mix dei colori che simulino i diversi momenti della giornata, sono stati definiti 6 colori base (3 per background e 3 per la luce del sole).
+
+            <img src="images/campo-notte.png" alt="Screenshot della scena di notte" style="max-width: 100%; margin-top: 0.5rem;" />
+        </p>
+
+<pre>
+if (time >= 5 && time < 8) { // Alba (5 - 8)
+    mix = (time - 5) / 3;
+    bgColor.lerpColors(colorNight, colorDawn, mix);
+    sColor.lerpColors(sunColorNight, sunColorDawn, mix);
+    sunLight.intensity = 0.2 + mix * 0.8;
+    hemiLight.intensity = 0.1 + mix * 0.5;
+}
+</pre>
+
+        <p>
+            L'intensità delle <code>PointLight</code> associate ai lampioni è governata da una curva lineare che accende le luci gradualmente a partire dal crepuscolo e le spegne dolcemente al sorgere del sole, per movimentare una scena che altrimenti sarebbe molto statica, specialmente per un gioco "sportivo".
+        </p>
+    </section>
+
+    <section id="riferimenti">
+
+        <h2>6. Riferimenti</h2>
+        <p>
+            <div id="ref1" class="reference">
+                [1]  Documentazione Ufficiale Three.js, "Vector3.lerpVectors", <a href="https://threejs.org/docs/#api/en/math/Vector3.lerpVectors" target="_blank">https://threejs.org/docs/#api/en/math/Vector3.lerpVectors</a>
+            </div>
+            <div id="ref2" class="reference">
+                [2] Documentazione Ufficiale Three.js, "AnimationMixer", <a href="https://threejs.org/docs/#api/en/animation/AnimationMixer" target="_blank">https://threejs.org/docs/#api/en/animation/AnimationMixer</a>
+            </div>
+            <div id="ref3" class="reference">
+                [3] Libreria UI, "lil-gui", <a href="https://lil-gui.georgealways.com/" target="_blank">https://lil-gui.georgealways.com/</a>
+            </div>
+            <div id="ref4" class="reference">
+                [4] Documentazione Ufficiale Three.js, "Raycaster (Interazione Click/Touch)", <a href="https://threejs.org/docs/#api/en/core/Raycaster" target="_blank">https://threejs.org/docs/#api/en/core/Raycaster</a>
+            </div>
+            <div id="ref5" class="reference">
+                [5] Documentazione Ufficiale Three.js, "HemisphereLight e DirectionalLight", <a href="https://threejs.org/docs/#api/en/lights/DirectionalLight" target="_blank">https://threejs.org/docs/#api/en/lights/DirectionalLight</a>
+            </div>
+            <div id="ref6" class="reference">
+                [6] Documentazione Ufficiale Three.js, "OrbitControls", <a href="https://threejs.org/docs/#examples/en/controls/OrbitControls" target="_blank">https://threejs.org/docs/#examples/en/controls/OrbitControls</a>
+            </div>
+        </p>
+    </section>
+
+</body>
+
+</html>

@@ -101,6 +101,7 @@
         <h2>Indice</h2>
         <ol>
             <li><a href="#introduzione">Introduzione</a></li>
+            <li><a href="#blender">Preparazione dei Modelli 3D in Blender</a></li>
             <li><a href="#asset">Caricamento Modelli e Asset</a></li>
             <li><a href="#logica">Logica di gioco</a></li>
             <li><a href="#interazione">Interazione utente</a></li>
@@ -128,15 +129,39 @@
         </p>
     </section>
 
+    <section id="blender">
+        <h2>2. Preparazione dei Modelli 3D in Blender</h2>
+        <p>
+            I modelli tridimensionali utilizzati nel progetto sono stati originariamente scaricati online, per poi essere sottoposti a un ampio processo di modifica, 
+            rifinitura e ottimizzazione tramite il software Blender. Questo passaggio è stato fondamentale per arricchire la scena di elementi più realistici ed in tema
+            con l'esperienza di gioco. Il lavoro è stato suddiviso in tre elementi distinti:
+        </p>
+        <ul>
+            <li><strong>campo.gltf:</strong> la cornice statica per l'intera scena. Contiene al suo interno molteplici elementi per ricreare in modo dettagliato una scena più reale possibile 
+                come pavimentazione interna ed esterna, le recinzioni, la struttura del canestro, vari personaggi statici e pubblico). Raggruppare questi asset in un unico file ha permesso 
+                di snellire notevolmente il codice di caricamento.</li>
+            <li><strong>palla.obj:</strong> Al contrario del campo, la palla da basket è stata mantenuta separata e gestita come oggetto singolo. 
+                Separazione necessaria per poter isolare l'oggetto e calcolarne matematicamente la posizione (lungo la parabola di tiro) e la rotazione fotogramma per 
+                fotogramma via codice.</li>
+            <li><strong>giocatore.gltf:</strong> Rappresenta l'elemento dinamico e interattivo principale, nonchè l'avatar 3D dell'utente. 
+                Era strettamente necessario disporre di un'animazione di tiro specifica che si sincronizzasse alla perfezione con i tempi della logica di gioco. 
+                Data la difficoltà nel reperire asset già pronti con questo esatto tipo di movimento sportivo, è stato introdotto questo manichino scheletrico, 
+                la cui animazione è stata gestita ed esportata per essere controllata dall'engine interno di animazione di Three.js.</li>
+        </ul>
+    </section>
+
     <section id="asset">
         <h2>2. Caricamento Modelli e Asset</h2>
         <p>
-            La scena si compone di vari asset 3D caricati in modo asincrono sfruttando diversi Loader offerti da Three.js (integrato nel progetto importando direttamente i moduli nativi):
+            La scena si compone di vari asset 3D caricati in modo asincrono sfruttando diversi Loader offerti da Three.js. Anziché utilizzare ambienti esterni come Node.js, 
+            la libreria è stata integrata nel progetto importando in modo diretto i moduli nativi (ES Modules) appoggiandosi alla CDN globale <em>unpkg.com</em>. 
         </p>
             <ul>
                 <li><strong>Giocatore e Campo:</strong> caricati tramite <code>GLTFLoader</code>. Il giocatore include un'animazione scheletrica del tiro gestita tramite <code>AnimationMixer</code>.</li>
                 <li><strong>Palla da basket:</strong> caricata combinando <code>OBJLoader</code> e <code>MTLLoader</code> per leggere correttamente i materiali e le texture mappate.</li>
-                <li><strong>Poster:</strong> creati istanziando una <code>PlaneGeometry</code> a cui viene applicata una texture fotografica 2D caricata tramite <code>TextureLoader</code></li>
+                <li><strong>Poster:</strong> creati istanziando una <code>PlaneGeometry</code> a cui viene applicata una texture fotografica 2D caricata tramite 
+                    <code>TextureLoader</code>. Per far sì che i tabelloni reagissero correttamente alle ombre e alle luci del ciclo giorno/notte, 
+                    è stato applicato un <code>MeshStandardMaterial</code>.</li>
                 <li><strong>Effetti sonori:</strong> file <code>.mp3</code> caricati tramite <code>AudioLoader</code> e collegati a un <code>AudioListener</code> posizionato sulla telecamera, 
                     garantendo un feedback uditivo differente in base all'esito del tiro (canestro, ferro o fuori). I file audio sono stati pensati per aggiungere un tocco di ilarità al progetto.</li>
             </ul>
@@ -154,7 +179,7 @@
         <h3>Calcolo della Parabola</h3>
         <p>
             Il movimento della palla nello spazio non utilizza un motore fisico reale, ma sfrutta l'interpolazione vettoriale unita a funzioni trigonometriche per simulare in modo 
-            economico ed efficace una traiettoria parabolica. La palla trasla dal punto di partenza (posizione della mano del giocatore al lancio) al punto di destinazione, che varia tra 
+            efficace una traiettoria parabolica. La palla trasla dal punto di partenza (posizione della mano del giocatore al lancio) al punto di destinazione, che varia tra 
             posizione del canestro in caso di tiro positivo, 
             posizione del canestro con rimbalzo successivo in caso di tiro neutro 
             e 3 possibili punti della scena in caso di fallimento.
@@ -172,7 +197,7 @@ ballMesh.rotation.z += 5 * delta;
 </pre>
     
         <p>
-            L'aggiunta dell'onda <code>Math.sin()</code> calcolata sul progresso del volo garantisce l'innalzamento e la successiva caduta della sfera simulando la parabola di tiro. 
+            L'aggiunta dell'onda <code>Math.sin()</code> calcolata sul progresso del volo garantisce l'innalzamento e la successiva caduta della palla simulando la parabola di tiro. 
             A questo si aggiunge la simulazione della rotazione della palla su sé stessa durante il volo lungo gli assi X e Z. 
             È stato implementato anche un rimbalzo aggiuntivo nel caso in cui la palla colpisca il ferro (<code>STATE_BOUNCING</code>) prima di cadere a terra, per differenziare lo scenario positivo da quello neutro.
             Dopo la traiettoria di volo, avendo completato la sua funzione all'iterno della scena, la palla ritorna invisibile <code>ballMesh.visible = false</code>, 
@@ -192,15 +217,18 @@ ballMesh.rotation.z += 5 * delta;
             Il progetto è completamente ottimizzato e responsivo, supportando molteplici schemi di interazione:
         </p>
         <ul>
-            <li><strong>Tiro:</strong> Attivabile cliccando il modello del giocatore tramite l'utilizzo di un <code>Raycaster</code>, che converte le coordinate 2D del mouse/touch nella scena in vettori 3D,
-                 oppure premendo la barra spaziatrice.</li>
+            <li><strong>Tiro:</strong> Attivabile premendo la barra spaziatrice o cliccando il modello del giocatore tramite l'utilizzo di un <code>Raycaster</code>. 
+                Affinché il click avesse effetto nel mondo 3D, le coordinate bidimensionali in pixel del browser sono state tradotte in Coordinate Dispositivo Normalizzate
+                 in scala da -1 a +1, per poi essere proiettate come vettori nella scena.</li>
             <li><strong>Reset:</strong> Per ripetere il tiro, l'utente può premere il tasto "R" o utilizzare un pulsante UI in overlay, progettato con touch-target per l'utilizzo da smartphone.</li>
             <li><strong>GUI (lil-gui):</strong> Permette di variare dinamicamente la velocità globale della palla, modificando il delta di avanzamento di <code>flightProgress</code>.
             Inoltre vi è la possibilità di attivare lo sfarfallio di uno dei lampioni del campetto.</li>
         </ul>
 
         <p>
-            L'esplorazione dell'ambiente avviene tramite <code>OrbitControls</code>, configurato con limitazioni precise (<code>maxPolarAngle = Math.PI / 2</code>) per impedire rotazioni paradossali sotto il pavimento e gestire limiti di zoom (<code>minDistance</code>, <code>maxDistance</code>). È stato inoltre disabilitato esplicitamente il comportamento di default dei tocchi sulla finestra (<code>touch-action: none</code>) per evitare interferenze su dispositivi mobile.
+            L'esplorazione dell'ambiente avviene tramite <code>OrbitControls</code>, configurato con limitazioni precise (<code>maxPolarAngle = Math.PI / 2</code>) 
+            per impedire rotazioni paradossali sotto il pavimento e gestire limiti di zoom (<code>minDistance</code>, <code>maxDistance</code>). È stato inoltre disabilitato 
+            esplicitamente il comportamento di default dei tocchi sulla finestra (<code>touch-action: none</code>) per evitare interferenze su dispositivi mobile.
         </p>
         
     </section>
@@ -209,19 +237,22 @@ ballMesh.rotation.z += 5 * delta;
         <h2>5. Illuminazione e Ciclo giorno/notte</h2>
 
         <p>
-            Uno degli elementi tecnicamente più complessi del progetto è la transizione fluida e continua dell'illuminazione per simulare il passaggio del tempo. Lo scorrere di un intero giorno viene simulato in 120 secondi reali.
+            Uno degli elementi tecnicamente più complessi del progetto è la transizione fluida e continua dell'illuminazione per simulare il passaggio del tempo. Lo scorrere di un intero giorno 
+            viene simulato in 120 secondi reali.
         </p>
 
         <p>La scena è illuminata da:</p>
         <ol>
-            <li><strong>Luce direzionale (sole/luna):</strong> <code>DirectionalLight</code> che ruota lungo un'orbita calcolata trigonometricamente sopra il campo.</li>
+            Luce direzionale (sole/luna): DirectionalLight che ruota lungo un'orbita calcolata trigonometricamente sopra il campo (asse y sempre positivo); il suo angolo di rotazione è impostato matematicamente in 
+            funzione dell'orario virtuale, calcolato in modo tale da risultare nullo (zero gradi) esattamente alle ore 6:00 del mattino, definendo così il punto di partenza dell'alba.
             <li><strong>Luce emisferica:</strong> <code>HemisphereLight</code> che simula la rifrazione del colore del cielo sugli oggetti, ammorbidendo le ombre.</li>
             <li><strong>Lampioni (PointLights):</strong> 4 luci posizionate proceduralmente agli angoli del campo, per simulare l'accensione dei lampioni di notte.
             Tramite pannello di controllo vi è anche la possibilità di abilitare lo sfarfallio di uno dei 4 lampioni presenti, in modo da aggiungere realismo alla scena.</li>
         </ol>   
 
         <p> 
-            La funzione <code>updateDayNightCycle()</code> viene richiamata ad ogni frame nel render loop. A seconda dell'ora corrente, i colori del background (il cielo) e della luce direzionale vengono fusi tramite interpolazione cromatica (<code>lerpColors</code>) per ricreare le tonalità dell'alba, del pieno giorno, del tramonto e della notte.
+            La funzione <code>updateDayNightCycle()</code> viene richiamata ad ogni frame nel render loop. A seconda dell'ora corrente, i colori del background (il cielo) e della luce direzionale
+            vengono fusi tramite interpolazione cromatica (<code>lerpColors</code>) per ricreare le tonalità dell'alba, del pieno giorno, del tramonto e della notte.
             Per ottenere i mix dei colori che simulino i diversi momenti della giornata, sono stati definiti 6 colori base (3 per background e 3 per la luce del sole).
 
             <img src="images/campo-notte.png" alt="Screenshot della scena di notte" style="max-width: 100%; margin-top: 0.5rem;" />
